@@ -5,7 +5,7 @@ int main() {
 
     int x = 40;
 
-    #pragma omp parallel for reduction(-:x) num_threads(5) 
+    #pragma omp parallel for reduction(-:x) num_threads(5)
     for(int i=0;i<5;i++)
     {
         printf("Thread %d initial private x = %d\n",
