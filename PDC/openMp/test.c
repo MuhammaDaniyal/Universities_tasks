@@ -2,9 +2,20 @@
 #include <stdio.h>
 
 int main() {
-    #pragma omp parallel num_threads(4)
+
+    int x = 40;
+
+    #pragma omp parallel for reduction(-:x) num_threads(5) 
+    for(int i=0;i<5;i++)
     {
-        printf("Hello from thread %d\n", omp_get_thread_num());
+        printf("Thread %d initial private x = %d\n",
+            omp_get_thread_num(), x);
+
+        x += 1;
+
+        printf("Thread %d after increment private x = %d\n",
+            omp_get_thread_num(), x);
     }
-    return 0;
+
+    printf("Final value of x: %d\n", x);
 }
