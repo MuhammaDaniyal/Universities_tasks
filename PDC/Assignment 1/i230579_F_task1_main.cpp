@@ -1,3 +1,9 @@
+/*
+    Name: Muhammad Daniyal
+    Roll Number: i230579
+    Assignment: 2
+*/
+
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -5,11 +11,12 @@
 #include <sstream>
 #include <algorithm>
 
-#include "naive.h"
-#include "SIMD_only.h"
-#include "openmp_simd.h"
-#include "openmp.h"
-#include "hybrid.h"
+#include "i230579_F_task1_V0.h"
+#include "i230579_F_task1_V1.h"
+#include "i230579_F_task1_V2.h"
+#include "i230579_F_task1_V3.h"
+#include "i230579_F_task1_V4.h"
+#include "i230579_F_task1_V5.h"
 
 using namespace std;
 
