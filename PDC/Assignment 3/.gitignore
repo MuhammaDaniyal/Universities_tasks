@@ -1,0 +1,29 @@
+# METIS and ParMETIS directories
+METIS/
+ParMETIS/
+
+# Dataset files
+*.metis
+*.txt
+web-Google.*
+
+# Build directories
+build/
+*.o
+*.a
+*.so
+
+# Results and outputs
+results/
+*.out
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
