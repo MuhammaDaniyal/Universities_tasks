@@ -1,21 +1,31 @@
 #include <omp.h>
 #include <stdio.h>
 
+void render_graphics() {
+    printf("Rendering graphics...\n");
+}
+void play_audio() {
+    printf("Playing audio...\n");
+}
+void read_input() {
+    printf("Reading input...\n");
+}
+
 int main() {
 
-    int x = 40;
-
-    #pragma omp parallel for reduction(-:x) num_threads(5)
-    for(int i=0;i<5;i++)
+    #pragma omp parallel
     {
-        printf("Thread %d initial private x = %d\n",
-            omp_get_thread_num(), x);
+        #pragma omp sections
+        {
+            #pragma omp section
+            { render_graphics(); }
 
-        x += 1;
+            #pragma omp section
+            { play_audio(); }
 
-        printf("Thread %d after increment private x = %d\n",
-            omp_get_thread_num(), x);
+            #pragma omp section
+            { read_input(); }
+        }
     }
 
-    printf("Final value of x: %d\n", x);
 }

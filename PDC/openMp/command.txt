@@ -1,0 +1,1 @@
+gcc -fopenmp test.c -o test && ./test
