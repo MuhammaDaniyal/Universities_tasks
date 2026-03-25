@@ -1,5 +1,7 @@
 Robot 1:
-Error: No valid path found for Robot 1
+Path: (2,2) -> (2,1) -> (1,1) -> (2,1) -> (2,0)
+Total Time: 4
+Total Energy: 4
 
 Robot 2:
 Error: No valid path found for Robot 2

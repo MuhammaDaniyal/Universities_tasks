@@ -1,0 +1,2 @@
+mpicc -O2 -o n n.c -lm
+mpirun -np 4 ./n
