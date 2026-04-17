@@ -1,0 +1,144 @@
+#define CL_TARGET_OPENCL_VERSION 300
+#define _POSIX_C_SOURCE 199309L
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+#include <CL/cl.h>
+
+#define M 176
+#define N 128
+#define K 144
+
+const char* kernelSrc =
+"__kernel void similarity(__global const float* Q, __global const float* D, __global float* S, int M, int N, int K) {\n"
+"    int j = get_global_id(0);\n"
+"    int i = get_global_id(1);\n"
+"    if (i >= M || j >= N) return;\n"
+"    float sum = 0.0f;\n"
+"    for (int k = 0; k < K; k++)\n"
+"        sum += Q[i*K + k] * D[j*K + k];\n"
+"    S[i*N + j] = sum;\n"
+"}\n";
+
+double get_ms(struct timespec a, struct timespec b) {
+    return (b.tv_sec - a.tv_sec)*1000.0 + (b.tv_nsec - a.tv_nsec)/1e6;
+}
+
+int main() {
+    float* Q     = (float*)malloc(M*K*sizeof(float));
+    float* D     = (float*)malloc(N*K*sizeof(float));
+    float* S     = (float*)malloc(M*N*sizeof(float));
+    float* S_ref = (float*)malloc(M*N*sizeof(float));
+
+    for (int i = 0; i < M; i++)
+        for (int k = 0; k < K; k++)
+            Q[i*K+k] = ((i+k) % 17) * 0.1f;
+
+    for (int j = 0; j < N; j++)
+        for (int k = 0; k < K; k++)
+            D[j*K+k] = ((j+2*k) % 19) * 0.1f;
+
+    // CPU reference
+    for (int i = 0; i < M; i++)
+        for (int j = 0; j < N; j++) {
+            float sum = 0.0f;
+            for (int k = 0; k < K; k++)
+                sum += Q[i*K+k] * D[j*K+k];
+            S_ref[i*N+j] = sum;
+        }
+
+    // OpenCL setup
+    cl_uint numPlatforms;
+    clGetPlatformIDs(0, NULL, &numPlatforms);
+    cl_platform_id platforms[10];
+    clGetPlatformIDs(numPlatforms, platforms, NULL);
+
+    cl_device_id device;
+    clGetDeviceIDs(platforms[1], CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+
+    char dname[256];
+    clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(dname), dname, NULL);
+    printf("Device: %s\n", dname);
+
+    cl_int err;
+    cl_context ctx = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+    cl_command_queue queue = clCreateCommandQueueWithProperties(ctx, device, 0, &err);
+
+    struct timespec t0, t1, t2, t3, t4;
+
+    // H2D
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    cl_mem bufQ = clCreateBuffer(ctx, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,  M*K*sizeof(float), Q, NULL);
+    cl_mem bufD = clCreateBuffer(ctx, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,  N*K*sizeof(float), D, NULL);
+    cl_mem bufS = clCreateBuffer(ctx, CL_MEM_WRITE_ONLY, M*N*sizeof(float), NULL, NULL);
+    clFinish(queue);
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+
+    // Build
+    cl_program prog = clCreateProgramWithSource(ctx, 1, &kernelSrc, NULL, NULL);
+    err = clBuildProgram(prog, 1, &device, NULL, NULL, NULL);
+    if (err != CL_SUCCESS) {
+        size_t logSize;
+        clGetProgramBuildInfo(prog, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
+        char* log = (char*)malloc(logSize);
+        clGetProgramBuildInfo(prog, device, CL_PROGRAM_BUILD_LOG, logSize, log, NULL);
+        printf("Build log:\n%s\n", log);
+        free(log);
+        return 1;
+    }
+
+    cl_kernel kernel = clCreateKernel(prog, "similarity", NULL);
+
+    int m=M, n=N, kk=K;
+    clSetKernelArg(kernel, 0, sizeof(cl_mem), &bufQ);
+    clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufD);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufS);
+    clSetKernelArg(kernel, 3, sizeof(int), &m);
+    clSetKernelArg(kernel, 4, sizeof(int), &n);
+    clSetKernelArg(kernel, 5, sizeof(int), &kk);
+
+    // global[0]=N (j), global[1]=M (i)
+    size_t global[2] = {N, M};
+    clock_gettime(CLOCK_MONOTONIC, &t2);
+    err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, NULL, 0, NULL, NULL);
+    clFinish(queue);
+    clock_gettime(CLOCK_MONOTONIC, &t3);
+
+    // D2H
+    clEnqueueReadBuffer(queue, bufS, CL_TRUE, 0, M*N*sizeof(float), S, 0, NULL, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &t4);
+
+    // Print first few
+    printf("First few S values (GPU vs CPU):\n");
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 3; j++)
+            printf("  S[%d][%d]: GPU=%.4f  CPU=%.4f\n", i, j, S[i*N+j], S_ref[i*N+j]);
+
+    // Correctness
+    int pass = 1;
+    float maxerr = 0.0f;
+    for (int i = 0; i < M*N; i++) {
+        float e = fabs(S[i] - S_ref[i]);
+        if (e > maxerr) maxerr = e;
+        if (e > 0.1f) pass = 0;
+    }
+
+    printf("Correctness: %s\n", pass ? "PASS" : "FAIL");
+    printf("Max error:   %.6f\n", maxerr);
+    printf("H2D time:    %.3f ms\n", get_ms(t0, t1));
+    printf("Kernel time: %.3f ms\n", get_ms(t2, t3));
+    printf("D2H time:    %.3f ms\n", get_ms(t3, t4));
+    printf("Total time:  %.3f ms\n", get_ms(t0, t4));
+
+    clReleaseMemObject(bufQ);
+    clReleaseMemObject(bufD);
+    clReleaseMemObject(bufS);
+    clReleaseKernel(kernel);
+    clReleaseProgram(prog);
+    clReleaseCommandQueue(queue);
+    clReleaseContext(ctx);
+    free(Q); free(D); free(S); free(S_ref);
+    return 0;
+}

@@ -4,7 +4,6 @@ ParMETIS/
 
 # Dataset files
 *.metis
-*.txt
 web-Google.*
 
 # Build directories
@@ -14,7 +13,6 @@ build/
 *.so
 
 # Results and outputs
-results/
 *.out
 *.log
 

@@ -1,0 +1,2 @@
+procs=2  edgecut=28610  iters=40  time=2.74691
+procs=4  edgecut=43279  iters=24  time=5.79942

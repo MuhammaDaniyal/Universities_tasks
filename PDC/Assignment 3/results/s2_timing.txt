@@ -1,0 +1,2 @@
+procs=2  iters=79  time=9.3134
+procs=4  iters=79  time=23.0908

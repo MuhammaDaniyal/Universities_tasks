@@ -1,24 +1,25 @@
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-int main(int argc, char *argv[]) {
-    int rank, size;
-    
-    MPI_Init(&argc, &argv);                        // Start MPI
-    printf("\n\n");
+int main(int argc, char *argv[])
+{
+    char message[20];
+    int i, rank, size;
+    MPI_Status status;
+    int root = 0;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);          // Who am I?
-    MPI_Comm_size(MPI_COMM_WORLD, &size);          // How many of us?
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    // printf("Hello from process %d out of %d!\n", rank, size);
+    if (rank == root)
+        strcpy(message, "Hello, PDC class");
 
-
-    if (rank == 0) {
-        printf("\nI am the MASTER (rank 0). Total processes: %d\n", size);
-    } else {
-        printf("I am a WORKER (rank %d), waiting for orders!\n", rank);
-    }
-
-    MPI_Finalize();                                // End MPI
+    MPI_Bcast(message, 20, MPI_CHAR, root, MPI_COMM_WORLD);
+    printf("Message from %d process : %s", rank, message);
+    MPI_Finalize();
+    printf("\n");
     return 0;
 }

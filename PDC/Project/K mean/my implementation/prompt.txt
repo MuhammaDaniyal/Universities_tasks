@@ -1,0 +1,134 @@
+You are a senior software engineer.
+Output only clean, efficient, production-quality code.
+No explanations, no comments (unless critical), no tests, no file structure.
+Single code block only.
+
+Project Context:
+This is a Parallel Computing project based on K-Means clustering.
+
+I need:
+
+A baseline sequential implementation
+An optimized/parallel implementation (OpenMP or better)
+Code structured for performance benchmarking
+
+Core Requirements:
+
+Focus on performance optimization
+Use:
+OpenMP (but is already implemented in the paper, so not enough)
+MPI (for distributed memory parallelism)
+OpenCL (for GPU acceleration)
+
+Optional: SIMD/vectorization if beneficial
+
+Algorithm:
+
+K-Means clustering
+Steps:
+Initialize centroids
+Assign points to nearest centroid (main bottleneck)
+Update centroids
+Repeat until convergence
+
+Important Constraints:
+
+Assignment step must be optimized (this is the bottleneck)
+Avoid critical sections if possible
+Use better parallel design (thread-local + merge, reduction, etc.)
+Support large N efficiently
+
+Performance Requirements:
+
+Measure execution time
+Compute speedup and efficiency
+Support variable input sizes
+
+Improvement Over Paper (IMPORTANT):
+The original paper already uses OpenMP with a critical section.
+
+I want a better version, such as:
+
+Removing critical section (use thread-local storage + merge)
+Better memory/cache usage
+Optional SIMD optimization
+Optional improved initialization (k-means++)
+
+Output strictly:
+
+Only code
+Sequential + optimized version in same file
+Ready to compile and benchmark
+
+Now solve this:
+👉 [YOUR QUESTION]
+
+2. Is your original prompt good?
+
+Yes, but:
+
+Too verbose → wastes tokens
+Repeats same ideas
+Doesn’t clearly emphasize “improve over paper”
+
+The version I gave:
+
+Keeps all requirements
+Removes noise
+Guides Claude toward better-than-paper solution
+3. IMPORTANT: What YOU should do (since OpenMP is already implemented)
+
+This is the real part you were confused about.
+
+❌ What NOT to do
+Don’t just rewrite OpenMP version → zero marks gain
+Don’t copy paper → baseline-level work
+✅ What you SHOULD do (pick 1–2 max)
+Best Option (High marks, still doable):
+👉 Remove critical section (THIS IS GOLD)
+
+Paper uses:
+
+#pragma omp critical
+
+This becomes a bottleneck on >2 cores
+
+Replace with:
+Thread-local clusters
+Then merge at end
+
+➡️ This is a real parallel optimization
+➡️ Exactly what your instructor wants
+
+Second strong option:
+👉 Add k-means++ initialization
+
+Why:
+
+Improves clustering quality
+Easy to implement
+Looks “research-level”
+Third (if you want extra edge):
+👉 SIMD optimization on distance computation
+Use #pragma omp simd
+Or manual vectorization
+Optional small add-ons:
+Convergence threshold (ε instead of fixed iterations)
+Multiple runs (parallel outer loop)
+4. Best Strategy (DO THIS)
+
+Don’t overcomplicate. Do:
+
+✅ Final Project Plan:
+Sequential K-Means
+OpenMP (basic, like paper)
+Optimized OpenMP (YOUR contribution):
+Remove critical section
+Thread-local + merge
+
+➡️ Then compare all 3
+
+5. One-line takeaway
+
+Your job is NOT to implement OpenMP — it’s to fix and improve the bad OpenMP design in the paper.
+And also you should first implemet MPI one and then OpenCL. OpenCL not in this prompt that would be written in the next prompt.

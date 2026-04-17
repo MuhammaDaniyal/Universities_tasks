@@ -1,0 +1,5 @@
+g++ -o exe naive.cpp && ./exe
+
+g++ -fopenmp -O2 -o exe openmp.cpp
+export OMP_NUM_THREADS=8 && ./exe
+
